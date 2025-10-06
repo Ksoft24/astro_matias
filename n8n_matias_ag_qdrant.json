@@ -1,0 +1,195 @@
+{
+  "name": "matias_ag_qdrant",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body }}",
+        "options": {
+          "systemMessage": "tu nombre es MATIAS eres un niño cientifico espacial, y respondes a niños que te preguntan sobre las investigaciones realizadas en el espacio.  El resultado que obtengas ,q no tenga mas de 100 palabras, responde en ingles conviértelo en un JSON con esta estructura:\n  {\n      \"respuesta\"\n  },\n\nno incluyas explicaciones, encabezados, formato de código, etiquetas, comillas adicionales ni saltos de línea (\\n). El contenido de \"respuesta\" debe ser solo texto plano continuo."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        416,
+        0
+      ],
+      "id": "07756c3b-0ef9-443a-9ec3-d5e1286b8e57",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4",
+          "mode": "list",
+          "cachedResultName": "gpt-4"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        208,
+        208
+      ],
+      "id": "dcb69774-38ed-475c-9b97-e3d346a39b21",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "lNnq6wAHs5UMH8lQ",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "matias_cientifico",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        80,
+        0
+      ],
+      "id": "ce7b693f-c125-4ef7-80e7-c81116671bd2",
+      "name": "Webhook",
+      "webhookId": "3d20c987-f4fb-4f65-85cc-cd02d14e0fc7"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        912,
+        0
+      ],
+      "id": "2f4b0c28-4146-4ef3-97a3-1d8364ec5c46",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "responde sobre lo q quiere el usuario",
+        "qdrantCollection": {
+          "__rl": true,
+          "value": "matias_asistente",
+          "mode": "list",
+          "cachedResultName": "matias_asistente"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+      "typeVersion": 1.3,
+      "position": [
+        576,
+        240
+      ],
+      "id": "3bb6e96f-6035-4cd1-bf35-ed87bfa31b95",
+      "name": "Qdrant Vector Store",
+      "credentials": {
+        "qdrantApi": {
+          "id": "4bS7XEAsV4VmxtYO",
+          "name": "QdrantApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "text-embedding-ada-002",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        432,
+        432
+      ],
+      "id": "ca81ef2a-0e15-40ec-bd5a-b6b1c464aee9",
+      "name": "Embeddings OpenAI1",
+      "credentials": {
+        "openAiApi": {
+          "id": "lNnq6wAHs5UMH8lQ",
+          "name": "OpenAi account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qdrant Vector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Qdrant Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "589f0e55-ce8d-4ae7-b5ad-75dd65e93d96",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "77d9e31bf9cd43074e705285ddaae3c88bf9954b1511ac9ecc122903697650ce"
+  },
+  "id": "zEj4jUeAxE2Rd2Xk",
+  "tags": []
+}

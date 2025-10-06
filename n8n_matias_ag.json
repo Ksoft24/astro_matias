@@ -1,0 +1,433 @@
+{
+  "name": "matias_ag",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "matias_cientifico_online",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "e33c2753-325f-4411-936a-e6373370f1bf",
+      "name": "Webhook Entrada",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "10998169-5c0d-4fb8-b657-4dc8a237f39b"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        2144,
+        0
+      ],
+      "id": "5d44a916-35cd-41c3-a60a-c51a4858aa74",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body.mensaje }}",
+        "options": {
+          "systemMessage": "ERES EL AGENTE MATIAS, TU MISION ES ORIENTAR A LOS FUTUROS PEQUEÑOS CIENTIFICOS DE LA NASA, PARA ESTO TOMARAS EL TOOL DONDE TENGO UN CSV EL CUAL ESCOGERAS DE ACUERDO A LA PREGUNTA UN LISTADO DE HASTA 3 ARTICULOS QUE CUMPLEN CON ESTE PROPOSITO, ALMACENANDO EN UN JSON {TITULO:\"...\", LINK:\"\"} RESPONDIENDO SOLAMENTE EN ESTE JSON, LAS PREGUNTAS SON EN ESPAÑOL PERO EL CSV ESTA EN INGLES DEBERAS HACER LA TRADUCCION DE LOS TITULOS"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        224,
+        16
+      ],
+      "id": "b7890ebc-ccb4-49c2-b109-740329636695",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        96,
+        256
+      ],
+      "id": "278de389-c54e-4cb8-b483-c1233ae2e08a",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "lNnq6wAHs5UMH8lQ",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "0"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        288,
+        240
+      ],
+      "id": "d9c8c94f-c760-48ea-abb4-9e1d03a044fc",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "url": "https://raw.githubusercontent.com/jgalazka/SB_publications/main/SB_publication_PMC.csv",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        448,
+        240
+      ],
+      "id": "c7ad1cb2-4696-43fb-8ee9-8f99c5ccd11a",
+      "name": "CSV_LISTADO"
+    },
+    {
+      "parameters": {
+        "batchSize": "=1",
+        "options": {
+          "reset": false
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        816,
+        16
+      ],
+      "id": "6cac4208-e35e-4ab7-ba00-04a8ad4df499",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.LINK }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        992,
+        96
+      ],
+      "id": "e8713e02-d6ae-4a92-8efb-9eb7cb0e8924",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Toma el texto dentro de \"output\" y lo convierte en JSON real\nconst raw = $json[\"output\"];\n\nlet parsed = [];\ntry {\n  parsed = JSON.parse(raw); // Convierte el texto en JSON\n} catch (error) {\n  parsed = [];\n}\n\n// Retorna cada elemento como item individual\nreturn parsed.map(obj => ({ json: obj }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        576,
+        16
+      ],
+      "id": "f18feabd-3b52-447c-ae27-6a364926d370",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Webhook Entrada').item.json.body.mensaje }}",
+        "options": {
+          "systemMessage": "=DE ACUERDO AL MENSAJE QUE RECIBISTE INCIALEMNTE AHORA ANALISA SI EL CONTENIDO:  {{ $json.data }}, TIENE ALGO RELEVANTE y  RESPONDE EN UN JSON {respuesta:\"...\"}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        1248,
+        256
+      ],
+      "id": "3d8adb2a-daa6-4636-9b7d-fcb66489eeeb",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        960,
+        288
+      ],
+      "id": "62cec8f3-1c51-474e-b1bf-d0a8f9893169",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "lNnq6wAHs5UMH8lQ",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=",
+        "options": {
+          "systemMessage": "=Tu nombre es MATIAS. Deberás, de acuerdo a lo que te pidieron, analizar y resumir lo siguiente: \"{{ $json.resumen_completo }}\". \n\nEl contenido de \"$json.output\" puede ser una lista de varios resúmenes parciales. Tu tarea es combinarlos y generar una **única síntesis final** que describa de forma clara y breve lo que se buscó o investigó.\n\nDebes responder estrictamente en formato JSON con **una sola respuesta**, así:\n{respuesta:\"...\"}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        1712,
+        0
+      ],
+      "id": "cf1f4ad2-1a23-467b-a31e-a85e48181e88",
+      "name": "AI Agent2"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1584,
+        208
+      ],
+      "id": "ac289f35-c284-4d78-a424-416217039b67",
+      "name": "OpenAI Chat Model2",
+      "credentials": {
+        "openAiApi": {
+          "id": "lNnq6wAHs5UMH8lQ",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 3
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1552,
+        480
+      ],
+      "id": "496fe7f7-0907-4ae9-aeb9-7fef0c20c53a",
+      "name": "Wait",
+      "webhookId": "bf5fc343-f8e8-4e34-8586-1532576e6977"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Este nodo debe recibir como input tu array de objetos con \"output\"\nconst items = $input.all();\n\n// Unimos todos los textos en una sola cadena\nlet combinedText = items\n  .map(i => i.json.output || '')\n  .join('\\n\\n');\n\n// Limpiamos posibles caracteres sobrantes tipo {respuesta:\"...\"}\ncombinedText = combinedText\n  .replace(/{respuesta:\"/g, '')\n  .replace(/\"}/g, '')\n  .trim();\n\nreturn [\n  {\n    json: {\n      resumen_completo: combinedText\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1312,
+        0
+      ],
+      "id": "67b72644-5e9c-49b3-b75b-0cc1407b83bb",
+      "name": "Code1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook Entrada": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CSV_LISTADO": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent2": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent2",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "AI Agent2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "f4d473f5-0a7b-4367-bcd4-0d921a21fd52",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "77d9e31bf9cd43074e705285ddaae3c88bf9954b1511ac9ecc122903697650ce"
+  },
+  "id": "0OAOuEGhM4ZkmxdP",
+  "tags": []
+}
